@@ -49,21 +49,42 @@
         }
 
         .icon-mqtt-connected {
-            background-color: #16a34a;
-            border-radius: 25px;
-            border: 1px solid white;
+            background-color: white;
+            border: 3px solid #16a34a;
+            color: black;
+            padding: 2px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            margin: 4px 2px;
+            cursor: pointer;
+            border-radius: 16px;
         }
 
         .icon-mqtt-disconnected {
-            background-color: #2563eb;
-            border-radius: 25px;
-            border: 1px solid white;
+            background-color: white;
+            border: 3px solid #2563eb;
+            color: black;
+            padding: 2px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            margin: 4px 2px;
+            cursor: pointer;
+            border-radius: 16px;
         }
 
         .icon-offline {
-            background-color: #dc2626;
-            border-radius: 25px;
-            border: 1px solid white;
+            background-color: white;
+            border: 3px solid #dc2626;
+            color: black;
+            padding: 2px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            margin: 4px 2px;
+            cursor: pointer;
+            border-radius: 16px;
         }
 
         .waypoint-label {
@@ -2588,21 +2609,31 @@
     });
     var waypointsLayerGroup = new L.LayerGroup();
 
+
     // create icons
-    var iconMqttConnected = L.divIcon({
-        className: 'icon-mqtt-connected',
-        iconSize: [16, 16], // increase from 12px to 16px to make hover easier
-    });
+    var iconMqttConnected = function (shortName) {
+        return L.divIcon({
+            className: 'icon-mqtt-connected',
+            iconSize: [],
+            html: shortName,
+        });
+    };
 
-    var iconMqttDisconnected = L.divIcon({
-        className: 'icon-mqtt-disconnected',
-        iconSize: [16, 16], // increase from 12px to 16px to make hover easier
-    });
+    var iconMqttDisconnected = function(shortName) {
+       return L.divIcon({
+            className: 'icon-mqtt-disconnected',
+            iconSize: [],
+            html: shortName,
+        });
+    };
 
-    var iconOffline = L.divIcon({
-        className: 'icon-offline',
-        iconSize: [16, 16], // increase from 12px to 16px to make hover easier
-    });
+    var iconOffline = function(shortName) {
+        return L.divIcon({
+            className: 'icon-offline',
+            iconSize: [],
+            html: shortName,
+        });
+    };
 
     // create legend
     var legendLayerGroup = new L.LayerGroup();
@@ -3176,9 +3207,9 @@
                 }
 
                 // icon based on mqtt connection state
-                var icon = iconMqttDisconnected;
+                var icon = iconMqttDisconnected(node.short_name);
                 if(node.mqtt_connection_state === "online"){
-                    icon = iconMqttConnected;
+                    icon = iconMqttConnected(node.short_name);
                 }
 
                 // use offline icon for nodes older than configured node offline age
@@ -3187,7 +3218,7 @@
                 if(configNodesOfflineAgeInSeconds){
                     const lastUpdatedAgeInMillis = now.diff(moment(node.updated_at));
                     if(lastUpdatedAgeInMillis > configNodesOfflineAgeInSeconds * 1000){
-                        icon = iconOffline;
+                        icon = iconOffline(node.short_name);
                     }
                 }
 
