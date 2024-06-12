@@ -1572,6 +1572,9 @@
     }
 
     function getConfigAutoUpdatePositionInUrl() {
+        if (localStorage.getItem("config_auto_update_position_in_url") === null) {
+            localStorage.setItem("config_auto_update_position_in_url", true);
+        }
         return localStorage.getItem("config_auto_update_position_in_url") === "true";
     }
 
