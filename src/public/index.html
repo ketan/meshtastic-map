@@ -1044,6 +1044,43 @@
                                 </ul>
                             </div>
 
+                            <!-- messages -->
+                            <div>
+                                <div class="bg-gray-200 p-2">
+                                    <div class="font-semibold">Messages</div>
+                                    <div class="text-sm text-gray-600">Messages received by this node</div>
+                                </div>
+                                <ul role="list" class="flex-1 divide-y divide-gray-200">
+                                    <template v-if="selectedNodeReceivedMessages.length > 0">
+                                        <li v-for="eachMessage of selectedNodeReceivedMessages">
+                                            <div class="relative flex items-center">
+                                                <div class="block flex-1 px-4 py-2">
+                                                    <div class="relative flex min-w-0 flex-1 items-center">
+                                                        <div class="truncate">
+                                                            <p class="truncate text-sm font-medium text-gray-900">{{ eachMessage.text }}</p>
+                                                            <div class="text-sm text-gray-700">{{ moment.unix(eachMessage.rx_time).fromNow() }} from {{ findNodeById(eachMessage.from)?.short_name || '???' }}</div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                    </template>
+                                    <template v-else>
+                                        <li>
+                                            <div class="relative flex items-center">
+                                                <div class="block flex-1 px-4 py-2">
+                                                    <div class="relative flex min-w-0 flex-1 items-center">
+                                                        <div class="truncate">
+                                                            <div class="text-sm text-gray-700">No messages received by this node</div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                    </template>
+                                </ul>
+                            </div>
+
                             <!-- traceroutes -->
                             <div>
                                 <div class="bg-gray-200 p-2">
@@ -1700,6 +1737,7 @@
 
                 selectedNode: null,
                 selectedNodeDeviceMetrics: [],
+                selectedNodeReceivedMessages: [],
                 selectedNodeEnvironmentMetrics: [],
                 selectedNodePowerMetrics: [],
                 selectedNodeMqttMetrics: [],
@@ -1729,6 +1767,7 @@
             window._onNodeClick = (node) => {
                 this.selectedNode = node;
                 this.loadNodeDeviceMetrics(node.node_id);
+                this.loadNodeMessages(node.node_id);
                 this.loadNodeEnvironmentMetrics(node.node_id);
                 this.loadNodePowerMetrics(node.node_id);
                 this.loadNodeMqttMetrics(node.node_id);
@@ -1766,6 +1805,18 @@
                     this.hardwareModelStats = response.data.hardware_model_stats;
                 }).catch((error) => {
                     // do nothing
+                });
+            },
+            loadNodeMessages: function(nodeId) {
+                window.axios.get(`/api/v1/nodes/${nodeId}/messages`, {
+                    params: {
+                        count: 100,
+                    },
+                }).then((response) => {
+                    // reverse response, as it's newest to oldest, but we want oldest to newest
+                    this.selectedNodeReceivedMessages = response.data.reverse();
+                }).catch(() => {
+                    this.selectedNodeReceivedMessages = [];
                 });
             },
             loadNodeDeviceMetrics: function(nodeId) {
@@ -2532,6 +2583,7 @@
 
     // global state
     var nodes = [];
+    var latestMessages = {}
     var nodeMarkers = {};
     var selectedNodeOutlineCircle = null;
     var waypoints = [];
@@ -3466,6 +3518,10 @@
         // clear previous data
         clearMap();
 
+        await fetch('/api/v1/latest-messages').then(async (response) => {
+            latestMessages = await response.json();
+        });
+
         // fetch nodes
         await fetch('/api/v1/nodes').then(async (response) => {
 
@@ -3515,7 +3571,6 @@
             onWaypointsUpdated(json.waypoints);
 
         });
-
     }
 
     function getRegionFrequencyRange(regionName) {
@@ -3613,6 +3668,14 @@
         tooltip += `<br/>Updated: ${moment(new Date(node.updated_at)).fromNow()}`;
         tooltip += (node.neighbours_updated_at ? `<br/>Neighbours Updated: ${moment(new Date(node.neighbours_updated_at)).fromNow()}` : '');
         tooltip += (node.position_updated_at ? `<br/>Position Updated: ${moment(new Date(node.position_updated_at)).fromNow()}` : '');
+
+        var latestMessageToNode = latestMessages[`${node.node_id}`]
+        if (latestMessageToNode) {
+            const sender = findNodeById(latestMessageToNode.from)
+            const senderShortName = sender ? sender.short_name : 'unknown';
+            const timeAgo = moment.unix(latestMessageToNode.rx_time).fromNow()
+            tooltip += `<br/>Latest message: ${latestMessageToNode.text}<br/>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;${timeAgo} from ${senderShortName}`;
+        }
 
         // show details button
         tooltip += `<br/><br/><button onclick="showNodeDetails(${node.node_id});" class="border border-gray-300 bg-gray-100 p-1 w-full rounded hover:bg-gray-200 mb-1">Show Full Details</button>`;

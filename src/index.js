@@ -506,6 +506,77 @@ app.get('/api/v1/waypoints', async (req, res) => {
     }
 });
 
+app.get('/api/v1/latest-messages', async(req, res) => {
+    try {
+        // get latest power metrics
+        const results = await prisma.$queryRaw`select *, max(rx_time) as latest FROM text_messages tm group by \`to\` order by rx_time`
+        const response = {}
+
+        results.forEach((row) => {
+            response[`${row.to}`] = row
+        });
+
+        // console.log(response)
+
+        res.json(response);
+    } catch(err) {
+        console.error(err);
+        res.status(500).json({
+            message: "Something went wrong, try again later.",
+        });
+    }
+
+});
+
+app.get('/api/v1/nodes/:nodeId/messages', async(req, res) => {
+    try {
+
+        const nodeId = parseInt(req.params.nodeId);
+        const count = req.query.count ? parseInt(req.query.count) : undefined;
+
+        // find node
+        const node = await prisma.node.findFirst({
+            where: {
+                node_id: nodeId,
+            },
+        });
+
+        // make sure node exists
+        if(!node){
+            res.status(404).json({
+                message: "Not Found",
+            });
+            return;
+        }
+
+        // get latest power metrics
+        const results = await prisma.textMessage.findMany({
+            select: {
+                to: true,
+                from: true,
+                channel_id: true,
+                text: true,
+                rx_time: true
+            },
+            where: {
+                to: node.node_id,
+            },
+            orderBy: {
+                rx_time: 'desc',
+            },
+            take: count
+        })
+        res.json(results);
+
+    } catch(err) {
+        console.error(err);
+        res.status(500).json({
+            message: "Something went wrong, try again later.",
+        });
+    }
+
+});
+
 // start express server
 const listener = app.listen(port, () => {
     const port = listener.address().port;
