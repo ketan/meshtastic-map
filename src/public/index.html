@@ -3484,11 +3484,21 @@
                 window.showNodeDetails(goToNodeId);
 
             } else if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition((pos) => {
-                    const lat = pos.coords.latitude;
-                    const lon = pos.coords.longitude <= 100 ? pos.coords.longitude + 360 : pos.coords.longitude;
-                    map.flyTo([lat, lon], 10, {animate: true});
-                });
+                var queryParams = new URLSearchParams(window.location.search);
+                var queryLat = queryParams.get('lat');
+                var queryLng = queryParams.get('lng');
+                var queryZoom = queryParams.get('zoom');
+
+                if (!(queryLat || queryLng || queryZoom)) {
+                    navigator.geolocation.getCurrentPosition((pos) => {
+                        if (pos.coords.latitude && pos.coords.longitude)
+                        {
+                            const lat = pos.coords.latitude;
+                            const lon = pos.coords.longitude <= 100 ? pos.coords.longitude + 360 : pos.coords.longitude;
+                            map.flyTo([lat, lon], 10, {animate: true});
+                        }
+                    });
+                }
             }
 
         });
