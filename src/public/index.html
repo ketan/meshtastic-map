@@ -3596,6 +3596,12 @@
             tooltip += `<br/>Air Util: ${Number(node.air_util_tx).toFixed(2)}%`;
         }
 
+
+        if(node.latitude && node.longitude) {
+            const mapUrl = mapUrls[getConfigMapSelectedTileLayer()](node.latitude, node.longitude);
+            tooltip += `<br/>Location: <a href="${mapUrl}" target="_blank">${node.latitude}, ${node.longitude}</a>`;
+        }
+
         // ignore alt above 42949000 due to https://github.com/meshtastic/firmware/issues/3109
         if(node.altitude && node.altitude < 42949000){
             tooltip += `<br/>Altitude: ${node.altitude}m`;
