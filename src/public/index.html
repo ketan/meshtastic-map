@@ -2595,7 +2595,7 @@
 
     // use tile layer based on config
     const selectedTileLayerName = getConfigMapSelectedTileLayer();
-    const selectedTileLayer = tileLayers[selectedTileLayerName] || openStreetMapTileLayer;
+    const selectedTileLayer = tileLayers[selectedTileLayerName] || googleHybridTileLayer;
     selectedTileLayer.addTo(map);
 
     // create layer groups
