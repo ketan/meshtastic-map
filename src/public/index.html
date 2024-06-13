@@ -736,25 +736,11 @@
                                             <div class="block flex-1 px-4 py-2">
                                                 <div class="relative flex min-w-0 flex-1 items-center">
                                                     <div class="truncate">
-                                                        <p class="truncate text-sm font-medium text-gray-900">Latitude</p>
+                                                        <p class="truncate text-sm font-medium text-gray-900">Latitude, Longitude</p>
                                                         <p class="truncate text-sm text-gray-700">
-                                                            <span v-if="selectedNode.latitude">{{ selectedNode.latitude }}</span>
-                                                            <span v-else class="text-gray-500">???</span>
-                                                        </p>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </li>
-
-                                    <li>
-                                        <div class="relative flex items-center">
-                                            <div class="block flex-1 px-4 py-2">
-                                                <div class="relative flex min-w-0 flex-1 items-center">
-                                                    <div class="truncate">
-                                                        <p class="truncate text-sm font-medium text-gray-900">Longitude</p>
-                                                        <p class="truncate text-sm text-gray-700">
-                                                            <span v-if="selectedNode.longitude">{{ selectedNode.longitude }}</span>
+                                                            <span v-if="selectedNode.latitude && selectedNode.longitude">
+                                                                <a target="_blank" :href="getMapUrl(selectedNode.latitude, selectedNode.longitude)" class="link">{{ selectedNode.latitude }}, {{ selectedNode.longitude }}</a>
+                                                            </span>
                                                             <span v-else class="text-gray-500">???</span>
                                                         </p>
                                                     </div>
@@ -1600,7 +1586,7 @@
     }
 
     function getConfigMapSelectedTileLayer() {
-        return localStorage.getItem("config_map_selected_tile_layer") || "googleHybrid";
+        return localStorage.getItem("config_map_selected_tile_layer") || "Google Hybrid";
     }
 
     function setConfigMapSelectedTileLayer(layer) {
@@ -1768,6 +1754,9 @@
 
         },
         methods: {
+            getMapUrl: function(lat, lon) {
+                return mapUrls[getConfigMapSelectedTileLayer()](lat, lon);
+            },
             shouldShowInfoModal: function() {
                 return !window.getConfigHasSeenInfoModal()
                     && !window.isMobile();
@@ -2592,6 +2581,21 @@
         "Google Satellite": googleSatelliteTileLayer,
         "Google Hybrid": googleHybridTileLayer,
     };
+
+    var mapUrls = {
+        "OpenStreetMap": (lat, lon) => {
+            return `https://openstreetmap.org?mlat=${lat}&mlon=${lon}`
+        },
+        "Esri Satellite": (lat, lon) => {
+            return `https://maps.google.com/?q=${lat},${lon}`
+        },
+        "Google Satellite": (lat, lon) => {
+            return `https://maps.google.com/?q=${lat},${lon}`
+        },
+        "Google Hybrid": (lat, lon) => {
+            return `https://maps.google.com/?q=${lat},${lon}`
+        },
+    }
 
     // use tile layer based on config
     const selectedTileLayerName = getConfigMapSelectedTileLayer();
