@@ -7,6 +7,7 @@ const commandLineUsage = require("command-line-usage");
 
 // create prisma db client
 const { PrismaClient } = require("@prisma/client");
+const { channel } = require('diagnostics_channel');
 const prisma = new PrismaClient();
 
 // return big ints as string when using JSON.stringify
@@ -506,17 +507,25 @@ app.get('/api/v1/waypoints', async (req, res) => {
     }
 });
 
-app.get('/api/v1/latest-messages', async(req, res) => {
+app.get('/api/v1/latest-outgoing-messages', async(req, res) => {
     try {
         // get latest power metrics
-        const results = await prisma.$queryRaw`select *, max(rx_time) as latest FROM text_messages tm group by \`to\` order by rx_time`
+        const channel_id = req.query.channel_id;
+        let results=[]
+
+        if (channel_id) {
+          results =
+            await prisma.$queryRaw`select tm1.\`to\`, tm1.\`from\`, tm1.channel_id, tm1.\`text\`, tm1.rx_time from text_messages tm1 where tm1.channel_id = ${channel_id} and tm1.rx_time = (select max(tm2.rx_time) from text_messages tm2 where tm2.\`from\` = tm1.\`from\`)`;
+        } else {
+          results =
+            await prisma.$queryRaw`select tm1.\`to\`, tm1.\`from\`, tm1.channel_id, tm1.\`text\`, tm1.rx_time from text_messages tm1 where tm1.rx_time = (select max(tm2.rx_time) from text_messages tm2 where tm2.\`from\` = tm1.\`from\`)`;
+        }
+
         const response = {}
 
         results.forEach((row) => {
-            response[`${row.to}`] = row
+            response[`${row.from}`] = row
         });
-
-        // console.log(response)
 
         res.json(response);
     } catch(err) {
@@ -528,11 +537,12 @@ app.get('/api/v1/latest-messages', async(req, res) => {
 
 });
 
-app.get('/api/v1/nodes/:nodeId/messages', async(req, res) => {
+app.get('/api/v1/nodes/:nodeId/outgoing-nessages', async(req, res) => {
     try {
 
         const nodeId = parseInt(req.params.nodeId);
         const count = req.query.count ? parseInt(req.query.count) : undefined;
+        const channel_id = req.query.channel_id;
 
         // find node
         const node = await prisma.node.findFirst({
@@ -549,10 +559,57 @@ app.get('/api/v1/nodes/:nodeId/messages', async(req, res) => {
             return;
         }
 
-        // get latest power metrics
         const results = await prisma.textMessage.findMany({
             select: {
                 to: true,
+                channel_id: true,
+                text: true,
+                rx_time: true
+            },
+            where: {
+                from: node.node_id,
+                ...(channel_id && {channel_id: channel_id})
+            },
+            orderBy: {
+                rx_time: 'desc',
+            },
+            take: count
+        })
+        res.json(results);
+
+    } catch(err) {
+        console.error(err);
+        res.status(500).json({
+            message: "Something went wrong, try again later.",
+        });
+    }
+
+});
+
+app.get('/api/v1/nodes/:nodeId/incoming-nessages', async(req, res) => {
+    try {
+
+        const nodeId = parseInt(req.params.nodeId);
+        const count = req.query.count ? parseInt(req.query.count) : undefined;
+        const channel_id = req.query.channel_id;
+
+        // find node
+        const node = await prisma.node.findFirst({
+            where: {
+                node_id: nodeId,
+            },
+        });
+
+        // make sure node exists
+        if(!node){
+            res.status(404).json({
+                message: "Not Found",
+            });
+            return;
+        }
+
+        const results = await prisma.textMessage.findMany({
+            select: {
                 from: true,
                 channel_id: true,
                 text: true,
@@ -560,6 +617,7 @@ app.get('/api/v1/nodes/:nodeId/messages', async(req, res) => {
             },
             where: {
                 to: node.node_id,
+                ...(channel_id && {channel_id: channel_id})
             },
             orderBy: {
                 rx_time: 'desc',

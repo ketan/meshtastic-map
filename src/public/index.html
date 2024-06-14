@@ -1044,10 +1044,10 @@
                                 </ul>
                             </div>
 
-                            <!-- messages -->
+                            <!-- incoming messages -->
                             <div>
                                 <div class="bg-gray-200 p-2">
-                                    <div class="font-semibold">Messages</div>
+                                    <div class="font-semibold">Received Messages (LongFast)</div>
                                     <div class="text-sm text-gray-600">Messages received by this node</div>
                                 </div>
                                 <ul role="list" class="flex-1 divide-y divide-gray-200">
@@ -1072,6 +1072,43 @@
                                                     <div class="relative flex min-w-0 flex-1 items-center">
                                                         <div class="truncate">
                                                             <div class="text-sm text-gray-700">No messages received by this node</div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                    </template>
+                                </ul>
+                            </div>
+
+                            <!-- outgoing messages -->
+                            <div>
+                                <div class="bg-gray-200 p-2">
+                                    <div class="font-semibold">Sent Messages (LongFast)</div>
+                                    <div class="text-sm text-gray-600">Messages sent by this node</div>
+                                </div>
+                                <ul role="list" class="flex-1 divide-y divide-gray-200">
+                                    <template v-if="selectedNodeOutgoingMessages.length > 0">
+                                        <li v-for="eachMessage of selectedNodeOutgoingMessages">
+                                            <div class="relative flex items-center">
+                                                <div class="block flex-1 px-4 py-2">
+                                                    <div class="relative flex min-w-0 flex-1 items-center">
+                                                        <div class="truncate">
+                                                            <p class="truncate text-sm font-medium text-gray-900">{{ eachMessage.text }}</p>
+                                                            <div class="text-sm text-gray-700">{{ moment.unix(eachMessage.rx_time).fromNow() }} to {{ findNodeById(eachMessage.to)?.short_name || '???' }}</div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                    </template>
+                                    <template v-else>
+                                        <li>
+                                            <div class="relative flex items-center">
+                                                <div class="block flex-1 px-4 py-2">
+                                                    <div class="relative flex min-w-0 flex-1 items-center">
+                                                        <div class="truncate">
+                                                            <div class="text-sm text-gray-700">No messages sent by this node</div>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -1738,6 +1775,7 @@
                 selectedNode: null,
                 selectedNodeDeviceMetrics: [],
                 selectedNodeReceivedMessages: [],
+                selectedNodeOutgoingMessages: [],
                 selectedNodeEnvironmentMetrics: [],
                 selectedNodePowerMetrics: [],
                 selectedNodeMqttMetrics: [],
@@ -1808,13 +1846,24 @@
                 });
             },
             loadNodeMessages: function(nodeId) {
-                window.axios.get(`/api/v1/nodes/${nodeId}/messages`, {
+                window.axios.get(`/api/v1/nodes/${nodeId}/outgoing-nessages`, {
                     params: {
                         count: 100,
+                        channel_id: 'LongFast'
                     },
                 }).then((response) => {
-                    // reverse response, as it's newest to oldest, but we want oldest to newest
-                    this.selectedNodeReceivedMessages = response.data.reverse();
+                    this.selectedNodeOutgoingMessages = response.data;
+                }).catch(() => {
+                    this.selectedNodeOutgoingMessages = [];
+                });
+
+                window.axios.get(`/api/v1/nodes/${nodeId}/incoming-nessages`, {
+                    params: {
+                        count: 100,
+                        channel_id: 'LongFast'
+                    },
+                }).then((response) => {
+                    this.selectedNodeReceivedMessages = response.data;
                 }).catch(() => {
                     this.selectedNodeReceivedMessages = [];
                 });
@@ -2812,7 +2861,6 @@
     }
 
     function findNodeById(id) {
-
         // find node by id
         var node = nodes.find((node) => node.node_id.toString() === id.toString());
         if(node){
@@ -3518,7 +3566,7 @@
         // clear previous data
         clearMap();
 
-        await fetch('/api/v1/latest-messages').then(async (response) => {
+        await fetch('/api/v1/latest-outgoing-messages?channel_id=LongFast').then(async (response) => {
             latestMessages = await response.json();
         });
 
