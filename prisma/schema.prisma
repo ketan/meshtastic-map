@@ -228,6 +228,7 @@ model TextMessage {
   updated_at DateTime @default(now()) @updatedAt
 
   @@index(created_at)
+  @@index([channel_id])
   @@index(updated_at)
   @@index(to)
   @@index(from)
