@@ -3566,7 +3566,8 @@
         // clear previous data
         clearMap();
 
-        await fetch('/api/v1/latest-outgoing-messages?channel_id=LongFast').then(async (response) => {
+        // 4294967295 = 0xFFFFFFFF
+        await fetch('/api/v1/latest-outgoing-messages?to=4294967295').then(async (response) => {
             latestMessages = await response.json();
         });
 

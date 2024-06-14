@@ -510,16 +510,10 @@ app.get('/api/v1/waypoints', async (req, res) => {
 app.get('/api/v1/latest-outgoing-messages', async(req, res) => {
     try {
         // get latest power metrics
-        const channel_id = req.query.channel_id;
-        let results=[]
+        const to = req.query.to;
 
-        if (channel_id) {
           results =
-            await prisma.$queryRaw`select tm1.\`to\`, tm1.\`from\`, tm1.channel_id, tm1.\`text\`, tm1.rx_time from text_messages tm1 where tm1.channel_id = ${channel_id} and tm1.rx_time = (select max(tm2.rx_time) from text_messages tm2 where tm2.\`from\` = tm1.\`from\`)`;
-        } else {
-          results =
-            await prisma.$queryRaw`select tm1.\`to\`, tm1.\`from\`, tm1.channel_id, tm1.\`text\`, tm1.rx_time from text_messages tm1 where tm1.rx_time = (select max(tm2.rx_time) from text_messages tm2 where tm2.\`from\` = tm1.\`from\`)`;
-        }
+            await prisma.$queryRaw`select tm1.\`to\`, tm1.\`from\`, tm1.channel_id, tm1.\`text\`, tm1.rx_time from text_messages tm1 where tm1.to = ${to} and tm1.rx_time = (select max(tm2.rx_time) from text_messages tm2 where tm2.\`from\` = tm1.\`from\` and tm2.to = ${to})`;
 
         const response = {}
 
