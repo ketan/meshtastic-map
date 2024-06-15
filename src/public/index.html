@@ -1750,6 +1750,7 @@
 </script>
 
 <script>
+    let API_SERVER = '';
     Vue.createApp({
         data() {
             return {
@@ -1839,14 +1840,14 @@
                     && !window.isMobile();
             },
             loadHardwareModelStats: function() {
-                window.axios.get('/api/v1/stats/hardware-models').then((response) => {
+                window.axios.get(`${API_SERVER}/api/v1/stats/hardware-models`).then((response) => {
                     this.hardwareModelStats = response.data.hardware_model_stats;
                 }).catch((error) => {
                     // do nothing
                 });
             },
             loadNodeMessages: function(nodeId) {
-                window.axios.get(`/api/v1/nodes/${nodeId}/outgoing-nessages`, {
+                window.axios.get(`${API_SERVER}/api/v1/nodes/${nodeId}/outgoing-nessages`, {
                     params: {
                         count: 100,
                         channel_id: 'LongFast'
@@ -1857,7 +1858,7 @@
                     this.selectedNodeOutgoingMessages = [];
                 });
 
-                window.axios.get(`/api/v1/nodes/${nodeId}/incoming-nessages`, {
+                window.axios.get(`${API_SERVER}/api/v1/nodes/${nodeId}/incoming-nessages`, {
                     params: {
                         count: 100,
                         channel_id: 'LongFast'
@@ -1867,9 +1868,9 @@
                 }).catch(() => {
                     this.selectedNodeReceivedMessages = [];
                 });
-            },
+            },            
             loadNodeDeviceMetrics: function(nodeId) {
-                window.axios.get(`/api/v1/nodes/${nodeId}/device-metrics`, {
+                window.axios.get(`${API_SERVER}/api/v1/nodes/${nodeId}/device-metrics`, {
                     params: {
                         count: 100,
                     },
@@ -1883,7 +1884,7 @@
                 });
             },
             loadNodeEnvironmentMetrics: function(nodeId) {
-                window.axios.get(`/api/v1/nodes/${nodeId}/environment-metrics`, {
+                window.axios.get(`${API_SERVER}/api/v1/nodes/${nodeId}/environment-metrics`, {
                     params: {
                         count: 100,
                     },
@@ -1897,7 +1898,7 @@
                 });
             },
             loadNodePowerMetrics: function(nodeId) {
-                window.axios.get(`/api/v1/nodes/${nodeId}/power-metrics`, {
+                window.axios.get(`${API_SERVER}/api/v1/nodes/${nodeId}/power-metrics`, {
                     params: {
                         count: 100,
                     },
@@ -1912,7 +1913,7 @@
             },
             loadNodeMqttMetrics: function(nodeId) {
                 this.selectedNodeMqttMetrics = [];
-                window.axios.get(`/api/v1/nodes/${nodeId}/mqtt-metrics`).then((response) => {
+                window.axios.get(`${API_SERVER}/api/v1/nodes/${nodeId}/mqtt-metrics`).then((response) => {
                     this.selectedNodeMqttMetrics = response.data.mqtt_metrics;
                 }).catch(() => {
                     // do nothing
@@ -1920,7 +1921,7 @@
             },
             loadNodeTraceroutes: function(nodeId) {
                 this.selectedNodeTraceroutes = [];
-                window.axios.get(`/api/v1/nodes/${nodeId}/traceroutes`, {
+                window.axios.get(`${API_SERVER}/api/v1/nodes/${nodeId}/traceroutes`, {
                     params: {
                         count: 5,
                     },
